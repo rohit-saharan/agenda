@@ -25,7 +25,7 @@
   "author": "Ryan Schmukler <ryan@slingingcode.com> (http://slingingcode.com/)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/rschmukler/agenda/issues"
+    "url": "https://github.com/geekrohit/agenda/issues"
   },
   "dependencies": {
     "cron": "~1.1.0",
