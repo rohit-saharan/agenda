@@ -18,6 +18,7 @@
 
 - Minimal overhead. Agenda aims to keep its code base small.
 - Mongo backed persistence layer.
+- PostgreSQL backed persistence layer.
 - Promises based API.
 - Scheduling with configurable priority, concurrency, and repeating.
 - Scheduling via cron or human readable syntax.
@@ -92,6 +93,8 @@ const agenda = new Agenda({ db: { address: mongoConnectionString } });
 
 // or pass in an existing mongodb-native MongoClient instance
 // const agenda = new Agenda({mongo: myMongoClient});
+// or connect to Postgres
+// const agenda = new Agenda({ postgres: { connectionString: 'postgres://user:pass@localhost/db' } });
 
 agenda.define("delete old users", async (job) => {
   await User.remove({ lastLogIn: { $lt: twoDaysAgo } });

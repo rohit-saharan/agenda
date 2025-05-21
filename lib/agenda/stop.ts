@@ -27,18 +27,31 @@ export const stop = async function (this: Agenda): Promise<void> {
       }
 
       debug("about to unlock jobs with ids: %O", jobIds);
-      this._collection.updateMany(
-        { _id: { $in: jobIds } },
-        { $set: { lockedAt: null } },
-        (error: Error) => {
-          if (error) {
-            reject(error);
-          }
+      if (this._pg) {
+        const ids = jobIds.join(',');
+        this._pg
+          .query(
+            `UPDATE ${this._pgTable} SET locked_at = NULL WHERE id = ANY('{${ids}}'::int[])`
+          )
+          .then(() => {
+            this._lockedJobs = [];
+            resolve();
+          })
+          .catch(reject);
+      } else {
+        this._collection.updateMany(
+          { _id: { $in: jobIds } },
+          { $set: { lockedAt: null } },
+          (error: Error) => {
+            if (error) {
+              reject(error);
+            }
 
-          this._lockedJobs = [];
-          resolve();
-        }
-      );
+            this._lockedJobs = [];
+            resolve();
+          }
+        );
+      }
     });
   };
 
