@@ -58,6 +58,8 @@ Install via NPM
 
     npm install agenda
 
+Agenda requires **Node.js v16 or newer**.
+
 You will also need a working [Mongo](https://www.mongodb.com/) database (v3) to point it to.
 
 # CJS / Module Imports
