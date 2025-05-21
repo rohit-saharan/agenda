@@ -23,6 +23,32 @@ export const findAndLockNextJob = async function (
   const lockDeadline = new Date(Date.now().valueOf() - definition.lockLifetime);
   debug("_findAndLockNextJob(%s, [Function])", jobName);
 
+  if (this._pg) {
+    const res = await this._pg.query(
+      `UPDATE ${this._pgTable} SET locked_at = NOW() WHERE id = (
+        SELECT id FROM ${this._pgTable}
+        WHERE name = $1
+          AND (locked_at IS NULL OR locked_at <= $2)
+          AND next_run_at <= $3
+          AND (disabled IS NULL OR disabled = FALSE)
+        ORDER BY next_run_at ASC
+        LIMIT 1
+        FOR UPDATE SKIP LOCKED
+      ) RETURNING *`,
+      [jobName, lockDeadline, this._nextScanAt]
+    );
+    if (res.rows.length) {
+      const row = res.rows[0];
+      return createJob(this, {
+        ...row,
+        _id: row.id,
+        nextRunAt: row.next_run_at,
+        lockedAt: row.locked_at,
+      });
+    }
+    return undefined;
+  }
+
   // Don't try and access MongoDB if we've lost connection to it.
   // Trying to resolve crash on Dev PC when it resumes from sleep. NOTE: Does this still happen?
   // @ts-expect-error

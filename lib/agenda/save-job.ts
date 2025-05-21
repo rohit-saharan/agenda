@@ -56,6 +56,54 @@ export const saveJob = async function (this: Agenda, job: Job): Promise<Job> {
   try {
     debug("attempting to save a job into Agenda instance");
 
+    if (this._pg) {
+      const id = job.attrs._id as number | undefined;
+      const props = job.toJSON();
+      delete props._id;
+      delete props.unique;
+      delete props.uniqueOpts;
+      props.lastModifiedBy = this._name;
+
+      if (id) {
+        await this._pg.query(
+          `UPDATE ${this._pgTable} SET name=$1,type=$2,priority=$3,data=$4,next_run_at=$5,locked_at=$6,disabled=$7,last_modified_by=$8 WHERE id=$9`,
+          [
+            props.name,
+            props.type,
+            props.priority,
+            JSON.stringify(props.data || {}),
+            props.nextRunAt,
+            props.lockedAt,
+            props.disabled,
+            props.lastModifiedBy,
+            id,
+          ]
+        );
+      } else {
+        const res = await this._pg.query(
+          `INSERT INTO ${this._pgTable}(name,type,priority,data,next_run_at,locked_at,disabled,last_modified_by) VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id,next_run_at`,
+          [
+            props.name,
+            props.type,
+            props.priority,
+            JSON.stringify(props.data || {}),
+            props.nextRunAt,
+            props.lockedAt,
+            props.disabled,
+            props.lastModifiedBy,
+          ]
+        );
+        job.attrs._id = res.rows[0].id;
+        job.attrs.nextRunAt = res.rows[0].next_run_at;
+      }
+
+      if (job.attrs.nextRunAt && job.attrs.nextRunAt < this._nextScanAt) {
+        await processJobs.call(this, job);
+      }
+
+      return job;
+    }
+
     // Grab information needed to save job but that we don't want to persist in MongoDB
     const id = job.attrs._id;
     const { unique, uniqueOpts } = job.attrs;

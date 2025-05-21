@@ -25,7 +25,9 @@ export const close = async function (
     ...option,
   };
   try {
-    if (this._db) {
+    if (this._pg) {
+      await this._pg.end();
+    } else if (this._db) {
       await this._db.close(closeOptions.force);
     }
 

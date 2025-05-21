@@ -32,6 +32,7 @@ import { start } from "./start";
 import { stop } from "./stop";
 import { findAndLockNextJob } from "./find-and-lock-next-job";
 import { Job } from "../job";
+import { postgres, PostgresConfig } from "./postgres";
 
 export interface AgendaConfig {
   name?: string;
@@ -48,6 +49,7 @@ export interface AgendaConfig {
     collection?: string;
     options?: MongoClientOptions;
   };
+  postgres?: PostgresConfig;
 }
 
 /**
@@ -94,6 +96,8 @@ class Agenda extends EventEmitter {
   _db!: MongoClient;
   _mdb!: MongoDb;
   _collection!: Collection;
+  _pg?: import("pg").Client;
+  _pgTable?: string;
   _nextScanAt: any;
   _processInterval: any;
 
@@ -111,6 +115,7 @@ class Agenda extends EventEmitter {
   lockLimit!: typeof lockLimit;
   maxConcurrency!: typeof maxConcurrency;
   mongo!: typeof mongo;
+  postgres!: typeof postgres;
   name!: typeof name;
   now!: typeof now;
   processEvery!: typeof processEvery;
@@ -180,6 +185,14 @@ class Agenda extends EventEmitter {
         config.db.options,
         cb
       );
+    } else if (config.postgres) {
+      this.postgres(config.postgres, (err) => {
+        if (err) {
+          if (cb) cb(err as any, null);
+        } else if (cb) {
+          cb(null as any, null);
+        }
+      });
     }
   }
 }
@@ -199,6 +212,7 @@ Agenda.prototype.jobs = jobs;
 Agenda.prototype.lockLimit = lockLimit;
 Agenda.prototype.maxConcurrency = maxConcurrency;
 Agenda.prototype.mongo = mongo;
+Agenda.prototype.postgres = postgres;
 Agenda.prototype.name = name;
 Agenda.prototype.now = now;
 Agenda.prototype.processEvery = processEvery;

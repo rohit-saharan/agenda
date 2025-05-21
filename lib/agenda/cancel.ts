@@ -18,9 +18,23 @@ export const cancel = async function (
 ): Promise<number | undefined> {
   debug("attempting to cancel all Agenda jobs", query);
   try {
-    const { result } = await this._collection.deleteMany(query);
-    debug("%s jobs cancelled", result.n);
-    return result.n;
+    if (this._pg) {
+      let res;
+      if (query && Object.keys(query).length && (query as any).name) {
+        res = await this._pg.query(
+          `DELETE FROM ${this._pgTable} WHERE name = $1`,
+          [(query as any).name]
+        );
+      } else {
+        res = await this._pg.query(`DELETE FROM ${this._pgTable}`);
+      }
+      debug("%s jobs cancelled", res.rowCount);
+      return res.rowCount;
+    } else {
+      const { result } = await this._collection.deleteMany(query);
+      debug("%s jobs cancelled", result.n);
+      return result.n;
+    }
   } catch (error) {
     debug("error trying to delete jobs from MongoDB");
     throw error;
