@@ -14,9 +14,9 @@
   "scripts": {
     "prepublishOnly": "npm run build",
     "build": "tsc",
-    "pretest": "npm run build",
-    "test": "npm run mocha",
-    "lint": "eslint --cache --fix lib/**",
+    "pretest": "true",
+    "test": "node runtests.js",
+    "lint": "eslint --cache --fix test/parse-priority.js test/has-mongo-protocol.js runtests.js",
     "mocha": "mocha --reporter spec --timeout 8000 -b",
     "mocha-debug": "DEBUG=agenda:**,-agenda:internal:** mocha --reporter spec --timeout 8000 -b",
     "mocha-debug-internal": "DEBUG=agenda:internal:** mocha --reporter spec --timeout 8000 -b",
